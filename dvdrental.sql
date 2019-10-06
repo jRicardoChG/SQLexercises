@@ -118,6 +118,20 @@ select * from "tabla1" where "columna" = '1';
 select * from "tabla1" where "columna" between 3 and 5;
 select * from "tabla1" where "columna" =2 or "otracolumnadiferente" = 'smith';
 select * from "tabla1" where "columna" =2 and "otracolumnadiferente" = 'smith';
+select a,b,c from "tabla1";
+select a as nombre, b as apellido from "tabla1";
+select distinct a from "tabla1"; --<-- solovalore distintos, si selecciono varias columnas una union de estas columnas debe ser unica
+select tabla1.nombre from "tabla1";
+-- wildcards
+select tabla1.* from "tabla1";
+select * from "tabla" where [condicion] <operador logico> [condicion]
+-- estas condicones pueden ser
+-- between
+-- is null, is not null
+-- group by
+select columnax from "tabla1" group by columnax;
+select region,sum(amount) from sales group by region 
+-- se usa apra hacer calculos y asociar estos calculos con otra tbla
 
 
 -- update and delete
@@ -147,8 +161,105 @@ primary key --<-- no acepta null, los valores son unicos, solo uno por tabla: la
 serial --<-- es valor no reutilizable automatico
 ---------------------------------
 
+----- segundo curso psql
+
+--    foreign key contraints
+-- para mantener integridad referencial
+-- solo se puedenrefenciar primary keys de otras tablas
+-- recordar que una primary key debe ser unica en una tabla, pero puede estar formada por varias columnas de la misma tabla
+-- si la primary key de una tabla esta formada por varias columnas, la foreignkeyque haga referencia a esa primary key debe formarse de todas las columnas que la componen, con el mismo data type
+-- borrar una foreign key se prohibe para asegurar integridad
+-- para borrar records que tienen asociada una foreign key, se usa ON DELETE CASCADE
+-- 
+-- ejemplos
+
+create table products (
+    product_no integer primary key,
+    nombre text,
+    precio numeric
+);
+
+create table orders(
+    order_id integer primary key,
+    product_no integer references products (product_no) on delete restrict, --<-- no deja eliminar un record si tiene otros records asociados, debe ser borrado primero el record asociado para poder borrar el original
+    cantidad integer
+);
+
+create table orders(
+    order_id integer primary key,
+    product_no integer,
+    cantidad integer,
+    constraint fk_productno foreign key product_no references products (product_no) on delete cascade, --<-- si se borra, todos los records asociados se borran tambien 
+    constraint pk_orderid primary key (order_id)  
+);
 
 
+-- ejemplos de querys where
+-- repaso expresiones regluares con querys
+-- wildcard characters para regexp sql
+-- + 1 o mas veces; * 0 o mas veces; ? 1 o 0 veces; | una u otra; no las dos; {n veces}; () agrupar; % <-- indica cualquier caracter, tal como el punto en las regexp posix.
+-- mas infromacion https://www.postgresql.org/docs/9.5/functions-matching.html
 
+-- like
+-- not like
+-- not null
+-- null
+-- between
+-- in para varios valores ala vez dela misma columna
+-- not in degacion de in
+
+select * from "tabla" where columna1 like '%col%';    --<-- busca de la columna columna1 todo lo que contenga el string "col", al principio, en medio o al final
+select * from customer where last_name like 'A%' and last_name like '%a' limit 30;
+select * from customer where last_name is not null limit 30;
+
+-- where con operadores matematicos
+-- group by casi siempre se usa con funciones de gragacion que se definen antes del from de la query
+-- count cuenta los elementos existentes
+-- sum suma los valores de los records que se usan
+-- min
+-- max
+-- avg
+
+select payment.amount,payment.rental_id from payment where payment.amount < 5 limit 10; 
+select payment.customer_id,avg(payment.amount) from payment group by payment.customer_id limit 10;
+-- usando group by y haciendo un where sobre el resultado de la funcion avg
+select customer,media from (select payment.customer_id as customer,avg(payment.amount) as media from payment group by payment.customer_id)as tabla1 where media >=4 limit 20;
+-- uniendo where con group by , sin embargo el where no se puede aplicar al resultado del avg
+select payment.customer_id as customer,avg(payment.amount) as media from payment where customer_id = 4 group by payment.customer_id limit 10;
+-- usando where between y group by
+select payment.customer_id as customer,avg(payment.amount) as media from payment where customer_id between 2 and 4 group by payment.customer_id limit 10;
+
+-- haciendo una query en la que se unen dos tablas pero no hay un join
+-- en esta query existe una tabla llamada cateogrias en general y una tabla que indica la categoria a la cual pertenece un film existente en la base de datos, queremos saber el id del film y su categoria en letras
+select category.name,film_category.film_id from category,film_category where category.category_id = film_category.category_id limit 20;
+-- ahora hago esta misma query pero agrupando por cateogria y deseando saber cuantos filmes hay por categoria
+select category.name,count(film_category.film_id) from category,film_category where category.category_id = film_category.category_id group by category.name limit 10;
+
+
+-- usando DISTINCT
+
+-- en este caso se que hay 16000 veces que se han hecho retas de dvds
+select customer_id from rental order by customer_id asc;
+-- pero cunatos usuairos diferentes hay?
+select distinct customer_id from rental order by customer_id asc;
+-- y si solo quiero el numero de records?
+select count(tabla1.customerid) from (select distinct customer_id  as customerid from rental) as tabla1;
+
+-- usando orderby
+
+-- en este caso se muestra como se puede ahcer order by en dos o mas colmunas a la vez sol oes posible cuando hay varios reocrds para cada columna
+select customer_id,rental_date from rental order by customer_id asc,rental_date desc;
+-- y usando group by? deseo saber la cantidad de rentas que se hicieron por usuario y la que tiene la menor fecha;
+select customer_id,min(rental_date),count(rental_date) from rental group by customer_id order by customer_id asc;
+
+
+-- item functions
+
+select sum(payment.amount) as "suma delas rentas totales" from payment;
+select min(payment.amount) as "suma delas rentas totales" from payment;
+select max(payment.amount) as "suma delas rentas totales" from payment;
+select count(payment.amount) as "suma delas rentas totales" from payment;
+
+select payment.staff_id, sum(payment.amount) from payment group by payment.staff_id;
 
 
