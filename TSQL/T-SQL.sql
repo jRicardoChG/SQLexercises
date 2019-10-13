@@ -91,12 +91,53 @@ from tabla;
 -- comapraciones con NULL
 NULL = NULL retorna false
 NULL is NULL retorna true
+
 -- funcioens de SQL para manejar los NULLs
+
 ISNULL(columna,valor)
 -- retorna 'valor' si el registro en esa columan es NULL
+
 NULLIF(columna,esto)
 -- retirna NULL si la columna es igual a 'esto'
+
 COALESCE(columna1,columna2,...)
 -- retona el valor de la primera columna no nula de las que se listaron en la funcion
 
 -- ejemplos
+
+-- trata de convertir, si falla cas retorna null y isnull lo convierte a 0
+Select nombre, ISNULL(TRY_CAST(Size as integer),0) as tamanoNum
+from tabla;
+
+-- valores nulos seran iguales a string vacios en la salida
+select productNumber, ISNULL(Color,'') + ',' + ISNULL(Size,'') as ProductDetails
+from tabla;
+
+-- si es null se convierte en multi en la salida
+select nombre, NULLIF(color,'Multi') as singleColor
+from tabla;
+
+-- retorna la primera columna no nula de las mencionadas 
+select nombre,COALESCE(fechadiscontinua,sellenddate,sellstartdate) as ultimaactividad
+from tabla;
+
+-- case when permite definir la salida bajo una consdicion
+-- case when columna condicion then 'salida' else 'salida2' end as 'nombre opcional'  
+-- para comparar un vlor con nulo se usa IS o retornara siempre false.
+select nombre,  case 
+                    when sellendDate IS NULL then 'OnSale' 
+                    else 'agotado'
+                end as statusVentas
+from tabla;
+
+-- varios when en un solo case
+select nombre, case
+                    when 'S' then 'Small'
+                    when 'M' then 'Medium'
+                    when 'L' then 'Large'
+                    when 'XL' then 'Extra-Large'
+                    else ISNULL(Size, 'n/a')
+                end as PrdocutSize
+from tabla;
+
+
